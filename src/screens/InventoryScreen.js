@@ -38,25 +38,24 @@ export default function InventoryScreen(){
         <Text>{filterType === 'all' ? 'All' : filterType === 'inStock' ? 'In Stock' : 'Out of Stock'}</Text>
       </TouchableOpacity>
       <DataTable.Header>
-        <DataTable.Title>ID</DataTable.Title>
-        <DataTable.Title>Name</DataTable.Title>
-        <DataTable.Title numeric>Price</DataTable.Title>
-        <DataTable.Title numeric>Quantity</DataTable.Title>
-        <DataTable.Title>Last Check-In</DataTable.Title>
-        <DataTable.Title>Last Check-Out</DataTable.Title>
-        <DataTable.Title numeric>Total Value</DataTable.Title>
+        <DataTable.Title style={{flex: 1}}>Name</DataTable.Title>
+        <DataTable.Title numeric style={{flex: 1}}>Price</DataTable.Title>
+        <DataTable.Title numeric style={{flex: 1.5, marginRight: 10}}>Qty</DataTable.Title>
+        <DataTable.Title style={{flex: 1.5}}>Last C-In</DataTable.Title>
+        <DataTable.Title style={{flex: 1.5}}>Last C-Out</DataTable.Title>
+        <DataTable.Title numeric style={{flex: 1}}>Total Value</DataTable.Title>
       </DataTable.Header>
     </View>
   );
 
   const renderItem = ({item}) => (
     <DataTable.Row>
-      <DataTable.Cell>{item.id}</DataTable.Cell>
+      {/* <DataTable.Cell>{item.id}</DataTable.Cell> */}
       <DataTable.Cell>{item.name}</DataTable.Cell>
       <DataTable.Cell numeric>₹{item.price.toFixed(2)}</DataTable.Cell>
-      <DataTable.Cell numeric>{item.quantity}</DataTable.Cell>
-      <DataTable.Cell>{item.last_checkin || '-'}</DataTable.Cell>
-      <DataTable.Cell>{item.last_checkout || '-'}</DataTable.Cell>
+      <DataTable.Cell numeric style={{fontWeight: '600', color: '#333', marginRight: 10}}>{item.quantity}</DataTable.Cell>
+      <DataTable.Cell style={{fontWeight: '600', color: '#333'}}>{item.last_checkin ? item.last_checkin.substring(0, 10) : '-'}</DataTable.Cell>
+      <DataTable.Cell style={{fontWeight: '600', color: '#333'}}>{item.last_checkout ? item.last_checkout.substring(0, 10) : '-'}</DataTable.Cell>
       <DataTable.Cell numeric>₹{(item.price * item.quantity).toFixed(2)}</DataTable.Cell>
     </DataTable.Row>
   );
