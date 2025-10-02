@@ -1,55 +1,89 @@
-// src/screens/CheckOutScreen.js
-import React, {useState} from 'react';
-import {View, Text, TextInput, Button, Alert, StyleSheet} from 'react-native';
+import React, { useState } from 'react';
+import {View, Alert, Text, Button, StyleSheet, TextInput} from 'react-native';
 import BarcodeScanner from '../components/BarcodeScanner';
 import { addOrUpdateProduct, getAllProducts } from '../db';
 
 export default function CheckOutScreen({navigation}) {
-  const [barcode, setBarcode] = useState('');
-  const [name, setName] = useState('');
-  const [price, setPrice] = useState('');
-  const [qty, setQty] = useState('1');
   const [scanning, setScanning] = useState(true);
+  const [barcode, setBarcode] = useState('');
+  const [message, setMessage] = useState('');
+  const [qty, setQty] = useState('1');
+  const [product, setProduct] = useState(null);
 
   const onScanned = async (value) => {
+    if (!value) return;
     setScanning(false);
-    setBarcode(value);
+    const cleanedValue = value.toString().replace(/\s/g, '');
+    setBarcode(cleanedValue);
     const prods = await getAllProducts();
-    const p = prods.find(x=>x.barcode===value);
-    if(p){ setName(p.name); setPrice(String(p.price)); }
-    else { setName(''); setPrice(''); }
+    const p = prods.find(x => x.barcode.replace(/\s/g, '') === cleanedValue);
+    if(p){
+      setProduct(p);
+      setMessage(`Product found: ${p.name}. Enter quantity and press Check-Out.`);
+    } else {
+      setProduct(null);
+      setMessage('Product not found. Please scan a valid product barcode.');
+    }
   };
 
   const onCheckOut = async () => {
-    if(!barcode || !name || !price || !qty) return Alert.alert('Please fill all fields');
-    await addOrUpdateProduct({ barcode, name, price: parseFloat(price), qty: parseInt(qty,10), type:'OUT' });
-    Alert.alert('Checked Out');
-    navigation.goBack();
+    try {
+      if(!product) {
+        setMessage('No product selected. Please scan a valid product barcode first.');
+        return;
+      }
+      const quantity = parseInt(qty, 10);
+      if(isNaN(quantity) || quantity <= 0) {
+        setMessage('Invalid quantity. Please enter a valid quantity greater than zero.');
+        return;
+      }
+      await addOrUpdateProduct({ barcode: barcode, name: product.name, price: product.price, qty: quantity, type:'OUT' });
+      setMessage(`Checked Out successfully: ${product.name}, Quantity: ${quantity}`);
+      setTimeout(() => {
+        setScanning(true);
+        setBarcode('');
+        setMessage('');
+        setQty('1');
+        setProduct(null);
+      }, 2000);
+    } catch (error) {
+      setMessage('Error: ' + error.message);
+    }
   };
 
   return (
     <View style={{flex:1}}>
       <View style={{height:300}}>
-        {scanning ? <BarcodeScanner onScanned={onScanned} active={scanning} /> : <View style={styles.scannedBox}><Text>Scanned: {barcode || '---'}</Text></View>}
+        {scanning ? <BarcodeScanner onScanned={onScanned} active={scanning} /> : <View style={styles.messageBox}><Text>{message || '---'}</Text></View>}
       </View>
-      <View style={{padding:16}}>
-        <Text>Barcode</Text>
-        <TextInput value={barcode} onChangeText={setBarcode} style={styles.input} />
-        <Text>Product Name</Text>
-        <TextInput value={name} onChangeText={setName} style={styles.input} />
-        <Text>Price</Text>
-        <TextInput keyboardType="numeric" value={price} onChangeText={setPrice} style={styles.input} />
-        <Text>Quantity</Text>
-        <TextInput keyboardType="numeric" value={qty} onChangeText={setQty} style={styles.input} />
-        <Button title="Check-Out" onPress={onCheckOut} />
-        <View style={{height:8}} />
-        <Button title="Scan Again" onPress={()=>setScanning(true)} />
-      </View>
+      {!scanning && product && (
+        <View style={{padding:16}}>
+          <Text>Barcode: {barcode}</Text>
+          <Text>Product Name: {product.name}</Text>
+          <Text>Price: {product.price}</Text>
+          <Text>Quantity to Check-Out</Text>
+          <TextInput
+            keyboardType="numeric"
+            value={qty}
+            onChangeText={setQty}
+            style={styles.input}
+          />
+          <Button title="Check-Out" onPress={onCheckOut} />
+          <View style={{height:8}} />
+          <Button title="Scan Again" onPress={() => {
+            setScanning(true);
+            setBarcode('');
+            setMessage('');
+            setQty('1');
+            setProduct(null);
+          }} />
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  input:{borderWidth:1,borderColor:'#ddd',padding:8,marginBottom:12,borderRadius:6},
-  scannedBox:{flex:1,alignItems:'center',justifyContent:'center'}
+  messageBox: {flex:1, alignItems:'center', justifyContent:'center'},
+  input: {borderWidth:1, borderColor:'#ddd', padding:8, marginBottom:12, borderRadius:6}
 });

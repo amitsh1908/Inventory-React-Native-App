@@ -1,28 +1,31 @@
 // src/components/BarcodeScanner.js
 import React, {useEffect, useState} from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Camera, useCameraDevices, useFrameProcessor } from 'react-native-vision-camera';
-import { CodeScanner, BarcodeFormat } from 'react-native-vision-camera/frame-processors';
-import { runOnJS } from 'react-native-reanimated';
+import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-camera';
+import {request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 
 export default function BarcodeScanner({onScanned, active=true}) {
-  const devices = useCameraDevices();
-  const device = devices.back;
+  const device = useCameraDevice('back');
   const [hasPermission, setHasPermission] = useState(false);
 
-  useEffect(()=>{
-    Camera.requestCameraPermission().then(status => setHasPermission(status === 'authorized'));
-  },[]);
-
-  const frameProcessor = useFrameProcessor((frame) => {
-    'worklet';
-    const codes = CodeScanner.scan(frame, [BarcodeFormat.ALL_FORMATS]);
-    if (codes && codes.length > 0) {
-      runOnJS(onScanned)(codes[0].displayValue || codes[0].rawValue);
-    }
+  useEffect(() => {
+    const checkPermission = async () => {
+      const result = await request(PERMISSIONS.ANDROID.CAMERA);
+      setHasPermission(result === RESULTS.GRANTED);
+    };
+    checkPermission();
   }, []);
 
-  if (!device) return <Text style={styles.center}>Loading camera...</Text>;
+  const codeScanner = useCodeScanner({
+    codeTypes: ['qr', 'ean-13', 'ean-8', 'code-128', 'code-39', 'code-93', 'codabar', 'upc-a', 'upc-e'],
+    onCodeScanned: (codes) => {
+      if (codes.length > 0 && active) {
+        onScanned(codes[0].value);
+      }
+    }
+  });
+
+  if (device == null) return <Text style={styles.center}>No camera device found</Text>;
   if (!hasPermission) return <Text style={styles.center}>Please grant camera permission</Text>;
 
   return (
@@ -31,8 +34,7 @@ export default function BarcodeScanner({onScanned, active=true}) {
         style={StyleSheet.absoluteFill}
         device={device}
         isActive={active}
-        frameProcessor={frameProcessor}
-        frameProcessorFps={5}
+        codeScanner={codeScanner}
       />
     </View>
   );

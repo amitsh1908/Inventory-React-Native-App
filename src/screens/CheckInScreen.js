@@ -10,21 +10,34 @@ export default function CheckInScreen({navigation}) {
   const [price, setPrice] = useState('');
   const [qty, setQty] = useState('1');
   const [scanning, setScanning] = useState(true);
+  const [message, setMessage] = useState('');
 
   const onScanned = async (value) => {
     setScanning(false);
-    setBarcode(value);
+    const trimmedValue = value.trim();
+    setBarcode(trimmedValue);
     const prods = await getAllProducts();
-    const p = prods.find(x=>x.barcode===value);
+    const p = prods.find(x => x.barcode.trim() === trimmedValue);
     if(p){ setName(p.name); setPrice(String(p.price)); }
     else { setName(''); setPrice(''); }
   };
 
   const onCheckIn = async () => {
-    if(!barcode || !name || !price || !qty) return Alert.alert('Please fill all fields');
-    await addOrUpdateProduct({ barcode, name, price: parseFloat(price), qty: parseInt(qty,10), type:'IN' });
-    Alert.alert('Checked In');
-    navigation.goBack();
+    try {
+      if(!barcode || !name || !price || !qty) return setMessage('Please fill all fields');
+      await addOrUpdateProduct({ barcode, name, price: parseFloat(price), qty: parseInt(qty,10), type:'IN' });
+      setMessage('Checked In successfully. Product added.');
+      setTimeout(() => {
+        setBarcode('');
+        setName('');
+        setPrice('');
+        setQty('1');
+        setScanning(true);
+        setMessage('');
+      }, 2000);
+    } catch (error) {
+      setMessage('Error: ' + error.message);
+    }
   };
 
   return (
@@ -33,8 +46,13 @@ export default function CheckInScreen({navigation}) {
         {scanning ? <BarcodeScanner onScanned={onScanned} active={scanning} /> : <View style={styles.scannedBox}><Text>Scanned: {barcode || '---'}</Text></View>}
       </View>
       <View style={{padding:16}}>
+        {message ? <Text style={styles.message}>{message}</Text> : null}
         <Text>Barcode</Text>
-        <TextInput value={barcode} onChangeText={setBarcode} style={styles.input} />
+        <View style={{flexDirection:'row'}}>
+          <TextInput value={barcode} onChangeText={setBarcode} style={[styles.input, {flex:1}]} />
+          <View style={{width:8}} />
+          <Button title="Generate" onPress={() => setBarcode(Math.random().toString(36).substr(2, 9).toUpperCase())} />
+        </View>
         <Text>Product Name</Text>
         <TextInput value={name} onChangeText={setName} style={styles.input} />
         <Text>Price</Text>
@@ -51,5 +69,6 @@ export default function CheckInScreen({navigation}) {
 
 const styles = StyleSheet.create({
   input:{borderWidth:1,borderColor:'#ddd',padding:8,marginBottom:12,borderRadius:6},
-  scannedBox:{flex:1,alignItems:'center',justifyContent:'center'}
+  scannedBox:{flex:1,alignItems:'center',justifyContent:'center'},
+  message:{color:'red', textAlign:'center', marginTop:8, fontSize:16, fontWeight:'bold'}
 });

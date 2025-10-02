@@ -18,8 +18,8 @@ export default function App(){
   return (
     <PaperProvider>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="Main" screenOptions={{headerShown:true}}>
-          <Stack.Screen name="Main" component={MainScreen} />
+        <Stack.Navigator initialRouteName=" " screenOptions={{headerShown:true}}>
+          <Stack.Screen name=" " component={MainScreen} />
           <Stack.Screen name="CheckIn" component={CheckInScreen} options={{title:'Check-In'}} />
           <Stack.Screen name="CheckOut" component={CheckOutScreen} options={{title:'Check-Out'}} />
           <Stack.Screen name="Inventory" component={InventoryScreen} options={{title:'Inventory Items'}} />

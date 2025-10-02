@@ -36,24 +36,25 @@ export async function initDB() {
 }
 
 export async function addOrUpdateProduct({barcode, name, price, qty, type}) {
+  const trimmedBarcode = barcode.trim();
   const time = new Date().toISOString();
   const total = price * qty;
-  let [res] = await db.executeSql(`SELECT id,quantity FROM products WHERE barcode=?`, [barcode]);
+  let [res] = await db.executeSql(`SELECT id,quantity FROM products WHERE barcode=?`, [trimmedBarcode]);
   if(res.rows.length === 0){
     const p = await db.executeSql(
       `INSERT INTO products (barcode,name,price,quantity, last_checkin, last_checkout) VALUES (?,?,?,?,?,?)`,
-      [barcode, name, price, (type==='IN'? qty: 0), (type==='IN'?time:null), (type==='OUT'?time:null)]
+      [trimmedBarcode, name, price, (type==='IN'? qty: 0), (type==='IN'? time : null), (type==='OUT'? time : null)]
     );
     const productId = p[0].insertId;
-    await db.executeSql(`INSERT INTO logs (product_id,barcode,name,price,quantity,type,time,total_value) VALUES (?,?,?,?,?,?,?)`,
-      [productId,barcode,name,price,qty,type,time,total]);
+    await db.executeSql(`INSERT INTO logs (product_id,barcode,name,price,quantity,type,time,total_value) VALUES (?,?,?,?,?,?,?,?)`,
+      [productId,trimmedBarcode,name,price,qty,type,time,total]);
   } else {
     const existing = res.rows.item(0);
     let newQty = existing.quantity + (type==='IN'? qty: -qty);
     if(newQty < 0) newQty = 0;
     await db.executeSql(`UPDATE products SET quantity=?, price=?, ${type==='IN'?'last_checkin':'last_checkout'}=? WHERE id=?`, [newQty, price, time, existing.id]);
-    await db.executeSql(`INSERT INTO logs (product_id,barcode,name,price,quantity,type,time,total_value) VALUES (?,?,?,?,?,?,?)`,
-      [existing.id,barcode,name,price,qty,type,time,price*qty]);
+    await db.executeSql(`INSERT INTO logs (product_id,barcode,name,price,quantity,type,time,total_value) VALUES (?,?,?,?,?,?,?,?)`,
+      [existing.id,trimmedBarcode,name,price,qty,type,time,price*qty]);
   }
 }
 
