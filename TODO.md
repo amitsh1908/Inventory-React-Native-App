@@ -1,2 +1,0 @@
-- [x] Add marginRight to Qty DataTable.Title in renderHeader
-- [x] Add marginRight to Qty DataTable.Cell in renderItem
