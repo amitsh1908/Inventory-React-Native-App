@@ -24,10 +24,10 @@ export default function App() {
     <PaperProvider>
       <NavigationContainer>
         <Stack.Navigator
-          initialRouteName="Splash"   // 👈 show splash first
+          initialRouteName="Splash" //
           screenOptions={{ headerShown: true }}
         >
-          {/* Splash screen (no header) */}
+          {/* Splash screen  */}
           <Stack.Screen
             name="Splash"
             component={SplashScreen}
@@ -38,7 +38,10 @@ export default function App() {
           <Stack.Screen
             name="Main"
             component={MainScreen}
-            options={{ title: 'Home' }}
+            options={{
+              title:
+                '                            Flikt Technology Web Solution ',
+            }}
           />
           <Stack.Screen
             name="CheckIn"
